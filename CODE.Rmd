@@ -1,0 +1,94 @@
+---
+title: "CODE"
+author: "Chun-Li Hou"
+date: "`r format(Sys.time(), '%B %d, %Y')`"
+output: 
+  html_document:
+    code_folding: hide
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    theme: united
+    highlight: tango
+---
+
+```{r setup, include = F}
+knitr::opts_chunk$set(echo = TRUE, fig.align = "center",
+                      message = FALSE, warning = FALSE)
+```
+
+# Objective
+
+- ...
+
+# Preparation
+
+- ...
+
+```{r}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(dplyr, rvest, readr, stringr, utf8, tidyr)
+```
+
+# Analysis
+
+## English
+
+- ...
+
+```{r}
+genre.xpath = "//div[@class='subtext']/a"
+movie.url = "https://www.imdb.com/title/tt4154756"
+temp = movie.url %>% 
+  read_html() %>% 
+  html_nodes(xpath = genre.xpath) %>% 
+  html_text() %>% 
+  gsub(pattern = "\n", replacement = "") %>% 
+  trimws(which = "both")
+genre = temp[1:3]
+genre
+date = temp[4]
+date
+```
+
+## Chinese
+
+- ...
+
+```{r}
+# encode ch
+Sys.setlocale(category = "LC_ALL", locale = "cht")
+
+# source
+id.xpath = "//div[@class='SbNwzf eeoZZ']"
+id.url = "https://news.google.com/topstories?hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
+
+# scrap
+temp = id.url %>% 
+  read_html() %>% 
+  html_nodes(xpath = id.xpath) %>% 
+  html_text() %>% 
+  gsub(pattern = "\n", replacement = "") %>% 
+  trimws(which = "both")
+
+# split
+df = data.frame(Content = temp)
+df = df %>% 
+  mutate(Content = str_split(Content, pattern = "bookmark_bordersharemore_vert")) %>% 
+  unnest()
+
+# output
+write.csv(df, "TEST.csv", row.names = F)
+
+# encode en
+Sys.setlocale(category = "LC_ALL", locale = "English")
+# Sys.getlocale()
+```
+
+# Conclusion
+
+...
+
+# Reference
+
+1. [Yao-Jen Kuo / 2018 / Web Scrapper](https://t.ly/zEuO)
