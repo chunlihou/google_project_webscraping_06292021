@@ -17,43 +17,68 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center",
                       message = FALSE, warning = FALSE)
 ```
 
+```{r, echo = F}
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load(dplyr, rvest, readr, stringr, utf8, tidyr, httr, purrr,
+               pageviews)
+```
+
 # Objective
 
-- ...
+This project includes different parts of the case study. The following case studies are from mainly Google search and other learning platform courses, such as Datacamp, Google, Rpubs, and Coursera. The center point of these case studies is web scraping, which covers from basic scraping, auto crawling package selenium, article analysis, word operating, and etc.
 
-# Preparation
+# Case Study
 
-- ...
-
-```{r}
-if(!require("pacman")) install.packages("pacman")
-pacman::p_load(dplyr, rvest, readr, stringr, utf8, tidyr)
-```
-
-# Analysis
-
-## English
-
-- ...
+## A
 
 ```{r}
+# source
 genre.xpath = "//div[@class='subtext']/a"
 movie.url = "https://www.imdb.com/title/tt4154756"
-temp = movie.url %>% 
-  read_html() %>% 
+
+# check
+status_code(GET(movie.url))
+
+# scrap
+temp = movie.url %>%
+  read_html() %>%
   html_nodes(xpath = genre.xpath) %>% 
   html_text() %>% 
-  gsub(pattern = "\n", replacement = "") %>% 
+  gsub(pattern = "\n", replacement = "") %>%
   trimws(which = "both")
+
+# dice
 genre = temp[1:3]
-genre
 date = temp[4]
-date
+
+# print
+paste0("Avengers: Infinity War is a moive of ",
+       genre[1],
+       ", ",
+       genre[2],
+       ", and ",
+       genre[3],
+       ", and it showed on ",
+       date)
 ```
 
-## Chinese
+## B
 
-- ...
+```{r}
+mountain_wiki_pages = c("https://en.wikipedia.org/w/index.php?title=Mount_Everest&oldid=958643874",
+                        "https://en.wikipedia.org/w/index.php?title=K2&oldid=956671989",
+                        "https://en.wikipedia.org/w/index.php?title=Kangchenjunga&oldid=957008408")
+
+read_html_delayed = slowly(read_html, rate = rate_delay(0.5))
+
+for(page_url in mountain_wiki_pages){
+  html = read_html_delayed(page_url)
+  peak = html %>% html_node("#firstHeading") %>% html_text()
+  coords = html %>% html_node("#coordinates .geo-dms") %>% html_text()
+  print(paste(peak, coords, sep = ": "))}
+```
+
+## C
 
 ```{r}
 # encode ch
@@ -73,22 +98,23 @@ temp = id.url %>%
 
 # split
 df = data.frame(Content = temp)
+pattern = "bookmark_bordersharemore_vert"
 df = df %>% 
-  mutate(Content = str_split(Content, pattern = "bookmark_bordersharemore_vert")) %>% 
+  mutate(Content = str_split(Content, pattern = pattern)) %>% 
   unnest()
 
 # output
-write.csv(df, "TEST.csv", row.names = F)
+# write.csv(df, "TEST.csv", row.names = F)
 
 # encode en
 Sys.setlocale(category = "LC_ALL", locale = "English")
 # Sys.getlocale()
 ```
 
-# Conclusion
+## D
 
-...
+```{r}
+test = article_pageviews(project = "en.wikipedia",
+                         "Hadley Wickham")
 
-# Reference
-
-1. [Yao-Jen Kuo / 2018 / Web Scrapper](https://t.ly/zEuO)
+```
