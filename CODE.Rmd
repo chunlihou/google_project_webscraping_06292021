@@ -101,7 +101,8 @@ df = data.frame(Content = temp)
 pattern = "bookmark_bordersharemore_vert"
 df = df %>% 
   mutate(Content = str_split(Content, pattern = pattern)) %>% 
-  unnest()
+  unnest %>% 
+  subset(Content != "")
 
 # output
 # write.csv(df, "TEST.csv", row.names = F)
@@ -114,7 +115,5 @@ Sys.setlocale(category = "LC_ALL", locale = "English")
 ## D
 
 ```{r}
-test = article_pageviews(project = "en.wikipedia",
-                         "Hadley Wickham")
 
 ```
