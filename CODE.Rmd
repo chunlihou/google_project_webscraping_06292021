@@ -21,7 +21,8 @@ knitr::opts_chunk$set(echo = TRUE, fig.align = "center",
 if(!require("pacman")) install.packages("pacman")
 pacman::p_load(dplyr, rvest, readr, stringr, utf8, tidyr, httr, purrr,
                pageviews, xml2, jiebaR, tidytext, igraph, topicmodels,
-               ggpubr, reshape2, wordcloud2, htmlwidgets, webshot)
+               ggpubr, reshape2, wordcloud2, htmlwidgets, webshot,
+               kableExtra)
 ```
 
 # Objective
@@ -90,7 +91,7 @@ Sys.setlocale(category = "LC_ALL", locale = "English")
 
 - By setting celebrity's name, we can scrap down the information from Wikipedia website in English
 
-```{r, fig.width = 6, fig.height = 5}
+```{r}
 rm(wiki.table)
 url = "https://en.wikipedia.org/w/api.php"
 title = "Hadley Wickham"
@@ -109,5 +110,6 @@ name.df = data.frame(key = "Full name", value = title)
 wiki.table = rbind(name.df, wiki.table)
 wiki.table %>%
   filter(key != "") %>%
-  ggtexttable(rows = NULL, theme = ttheme("classic"))
+  kbl(align = "l") %>% 
+  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
 ```
