@@ -1,10 +1,9 @@
 ---
-title: "CODE"
+title: "Web Scraping"
 author: "Chun-Li Hou"
 date: "`r format(Sys.time(), '%B %d, %Y')`"
 output: 
   html_document:
-    code_folding: hide
     toc: true
     toc_depth: 3
     number_sections: true
@@ -14,13 +13,15 @@ output:
 
 ```{r setup, include = F}
 knitr::opts_chunk$set(echo = TRUE, fig.align = "center",
-                      message = FALSE, warning = FALSE)
+                      message = FALSE, warning = FALSE,
+                      echo = F)
 ```
 
-```{r, echo = F}
+```{r}
 if(!require("pacman")) install.packages("pacman")
 pacman::p_load(dplyr, rvest, readr, stringr, utf8, tidyr, httr, purrr,
-               pageviews)
+               pageviews, xml2, jiebaR, tidytext, igraph, topicmodels,
+               ggpubr, reshape2, wordcloud2, htmlwidgets, webshot)
 ```
 
 # Objective
@@ -29,58 +30,11 @@ This project includes different parts of the case study. The following case stud
 
 # Case Study
 
-## A
+## Google News with Wordcloud
 
-```{r}
-# source
-genre.xpath = "//div[@class='subtext']/a"
-movie.url = "https://www.imdb.com/title/tt4154756"
+- By scraping the Google news website in Taiwan, we could have the update and breaking news on time
 
-# check
-status_code(GET(movie.url))
-
-# scrap
-temp = movie.url %>%
-  read_html() %>%
-  html_nodes(xpath = genre.xpath) %>% 
-  html_text() %>% 
-  gsub(pattern = "\n", replacement = "") %>%
-  trimws(which = "both")
-
-# dice
-genre = temp[1:3]
-date = temp[4]
-
-# print
-paste0("Avengers: Infinity War is a moive of ",
-       genre[1],
-       ", ",
-       genre[2],
-       ", and ",
-       genre[3],
-       ", and it showed on ",
-       date)
-```
-
-## B
-
-```{r}
-mountain_wiki_pages = c("https://en.wikipedia.org/w/index.php?title=Mount_Everest&oldid=958643874",
-                        "https://en.wikipedia.org/w/index.php?title=K2&oldid=956671989",
-                        "https://en.wikipedia.org/w/index.php?title=Kangchenjunga&oldid=957008408")
-
-read_html_delayed = slowly(read_html, rate = rate_delay(0.5))
-
-for(page_url in mountain_wiki_pages){
-  html = read_html_delayed(page_url)
-  peak = html %>% html_node("#firstHeading") %>% html_text()
-  coords = html %>% html_node("#coordinates .geo-dms") %>% html_text()
-  print(paste(peak, coords, sep = ": "))}
-```
-
-## C
-
-```{r}
+```{r, results = "hide"}
 # encode ch
 Sys.setlocale(category = "LC_ALL", locale = "cht")
 
@@ -96,24 +50,64 @@ temp = id.url %>%
   gsub(pattern = "\n", replacement = "") %>% 
   trimws(which = "both")
 
-# split
+# process
 df = data.frame(Content = temp)
 pattern = "bookmark_bordersharemore_vert"
+
 df = df %>% 
   mutate(Content = str_split(Content, pattern = pattern)) %>% 
   unnest %>% 
-  subset(Content != "")
+  subset(Content != "") %>% 
+  mutate(Content = str_remove_all(Content, "[0-9a-zA-Z]+?"))
+
+temp = paste(apply(df, 1, function(row) paste(dQuote(row), collapse = " ")),
+             collapse = " ")
+
+cutter = worker(stop_word = "STOPWORD.csv", bylines = F)
+word = cutter[temp]
+
+# analyze
+df.freq = freq(word)
+df.freq = arrange(df.freq, desc(freq))
+df.freq.filter = df.freq %>% filter(freq > 2 & nchar(char) > 1)
+
+# plot
+p = wordcloud2(df.freq.filter,
+               minSize =  2, 
+               fontFamily = "Microsoft YaHei",
+               size = 1)
 
 # output
-# write.csv(df, "TEST.csv", row.names = F)
+saveWidget(p, "p.html", selfcontained = F)
+webshot("p.html", "p.png", vwidth = 900, vheight = 700, delay = 5)
 
 # encode en
 Sys.setlocale(category = "LC_ALL", locale = "English")
 # Sys.getlocale()
 ```
 
-## D
+## Wiki Celebrity in Table
 
-```{r}
+- By setting celebrity's name, we can scrap down the information from Wikipedia website in English
 
+```{r, fig.width = 6, fig.height = 5}
+rm(wiki.table)
+url = "https://en.wikipedia.org/w/api.php"
+title = "Hadley Wickham"
+# title = "Ross Ihaka"
+# title = "Grace Hopper"
+query = list(action = "parse", page = title, format = "xml")
+resp = GET(url = url, query = query)
+# status_code((resp))
+resp.xml = content(resp)
+page.html = resp.xml %>% xml_text() %>% read_html()
+wiki.table = page.html %>% 
+  html_node(css = ".infobox") %>% 
+  html_table()
+colnames(wiki.table) = c("key", "value")
+name.df = data.frame(key = "Full name", value = title)
+wiki.table = rbind(name.df, wiki.table)
+wiki.table %>%
+  filter(key != "") %>%
+  ggtexttable(rows = NULL, theme = ttheme("classic"))
 ```
