@@ -31,6 +31,37 @@ This project includes different parts of the case study. The following case stud
 
 # Case Study
 
+## Wiki Celebrity in Table
+
+- By setting celebrity's name, we can scrap down the information from Wikipedia website in English
+
+```{r}
+rm(wiki.table)
+url = "https://en.wikipedia.org/w/api.php"
+title = "Hadley Wickham"
+# title = "Ross Ihaka"
+# title = "Grace Hopper"
+query = list(action = "parse", page = title, format = "xml")
+resp = GET(url = url, query = query)
+# status_code((resp))
+resp.xml = content(resp)
+page.html = resp.xml %>% xml_text() %>% read_html()
+wiki.table = page.html %>% 
+  html_node(css = ".infobox") %>% 
+  html_table()
+colnames(wiki.table) = c("key", "value")
+name.df = data.frame(key = "Full name", value = title)
+wiki.table = rbind(name.df, wiki.table)
+wiki.table %>%
+  filter(key != "") %>%
+  rename("Key" = "key",
+         "Value" = "value") %>% 
+  kbl(align = "l", caption = NULL) %>% 
+  # kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+  kable_classic("hover")
+  # kable_minimal("hover")
+```
+
 ## Google News with Wordcloud
 
 - By scraping the Google news website in Taiwan, we could have the update and breaking news on time
@@ -84,32 +115,5 @@ webshot("p.html", "p.png", vwidth = 900, vheight = 700, delay = 5)
 
 # encode en
 Sys.setlocale(category = "LC_ALL", locale = "English")
-# Sys.getlocale()
-```
-
-## Wiki Celebrity in Table
-
-- By setting celebrity's name, we can scrap down the information from Wikipedia website in English
-
-```{r}
-rm(wiki.table)
-url = "https://en.wikipedia.org/w/api.php"
-title = "Hadley Wickham"
-# title = "Ross Ihaka"
-# title = "Grace Hopper"
-query = list(action = "parse", page = title, format = "xml")
-resp = GET(url = url, query = query)
-# status_code((resp))
-resp.xml = content(resp)
-page.html = resp.xml %>% xml_text() %>% read_html()
-wiki.table = page.html %>% 
-  html_node(css = ".infobox") %>% 
-  html_table()
-colnames(wiki.table) = c("key", "value")
-name.df = data.frame(key = "Full name", value = title)
-wiki.table = rbind(name.df, wiki.table)
-wiki.table %>%
-  filter(key != "") %>%
-  kbl(align = "l") %>% 
-  kable_styling(bootstrap_options = c("hover", "bordered", "striped"))
+Sys.getlocale()
 ```
